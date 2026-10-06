@@ -39,8 +39,22 @@ class BridgeRequestHandler(BaseHTTPRequestHandler):
 
         if self.path == "/status":
             tools = MCP_CLIENT.discover_tools()
-            status_value = "ready" if MCP_CLIENT.connected else "not_connected"
-            self._send_json(200, {"ok": True, "bridge": "ready", "mcp": status_value, "ws_port": WS_PORT, "available_tools": tools})
+            status_snapshot = MCP_CLIENT.get_status_snapshot()
+            status_value = "ready" if MCP_CLIENT.connected else status_snapshot.get("status", "not_connected")
+            payload = {
+                "ok": True,
+                "bridge": "ready",
+                "mcp": status_value,
+                "ws_port": WS_PORT,
+                "available_tools": tools,
+                "backend": status_snapshot.get("backend"),
+                "studio_connected": status_snapshot.get("studio_connected"),
+                "mcp_bat_found": status_snapshot.get("mcp_bat_found"),
+                "process_running": status_snapshot.get("process_running"),
+                "process_exit_code": status_snapshot.get("process_exit_code"),
+                "last_error": status_snapshot.get("last_error"),
+            }
+            self._send_json(200, payload)
             return
 
         self._send_json(404, {"ok": False, "error": "Not found"})
@@ -97,6 +111,13 @@ class BridgeRequestHandler(BaseHTTPRequestHandler):
 
 def serve():
     SecurityManager.ensure_localhost_only()
+    print("Starting Roblox Studio MCP bridge...")
+    try:
+        MCP_CLIENT.ensure_stdio_connection()
+        print(f"Roblox Studio MCP launcher status: {MCP_CLIENT.get_status_snapshot()}")
+    except Exception as exc:  # pragma: no cover - startup should stay resilient
+        print(f"Roblox Studio MCP launcher did not connect automatically: {exc}")
+
     server = ThreadingHTTPServer((HOST, PORT), BridgeRequestHandler)
     ws_server = BridgeWebSocketServer(HOST, WS_PORT)
     print(f"Roblox bridge listening on http://{HOST}:{PORT}")

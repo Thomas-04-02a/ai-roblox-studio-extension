@@ -1,0 +1,79 @@
+:root {
+  --rbx-agent-bg: rgba(17, 24, 39, 0.96);
+  --rbx-agent-border: rgba(148, 163, 184, 0.35);
+  --rbx-agent-text: #f8fafc;
+  --rbx-agent-muted: #cbd5e1;
+  --rbx-agent-accent: #4f46e5;
+  --rbx-agent-red: #ef4444;
+  --rbx-agent-yellow: #fbbf24;
+  --rbx-agent-green: #22c55e;
+  --rbx-agent-gray: #64748b;
+}
+
+.rbx-agent-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 12px;
+  padding: 8px 12px;
+  border: 1px solid var(--rbx-agent-border);
+  border-radius: 12px;
+  background: var(--rbx-agent-bg);
+  color: var(--rbx-agent-text);
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.2);
+  font: 12px/1.4 system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  position: relative;
+  z-index: 2147483647;
+}
+
+.rbx-agent-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 116px;
+}
+
+.rbx-agent-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+  background: var(--rbx-agent-gray);
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.08);
+}
+
+.rbx-agent-dot--green { background: var(--rbx-agent-green); }
+.rbx-agent-dot--yellow { background: var(--rbx-agent-yellow); }
+.rbx-agent-dot--red { background: var(--rbx-agent-red); }
+.rbx-agent-dot--idle { background: var(--rbx-agent-gray); }
+
+.rbx-agent-label {
+  color: var(--rbx-agent-text);
+  font-weight: 600;
+}
+
+.rbx-agent-button {
+  border: 1px solid rgba(99, 102, 241, 0.5);
+  border-radius: 8px;
+  background: var(--rbx-agent-accent);
+  color: white;
+  padding: 6px 10px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: opacity 0.2s ease;
+}
+
+.rbx-agent-button:hover {
+  opacity: 0.92;
+}
+
+.rbx-agent-button.secondary {
+  background: rgba(15, 23, 42, 0.75);
+  border-color: var(--rbx-agent-border);
+}
+
+@media (max-width: 720px) {
+  .rbx-agent-bar {
+    flex-wrap: wrap;
+  }
+}

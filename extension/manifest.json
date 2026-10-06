@@ -1,0 +1,59 @@
+{
+  "manifest_version": 3,
+  "name": "Roblox AI Agent",
+  "version": "0.1.0",
+  "description": "Connect ChatGPT or DeepSeek to Roblox Studio through a local bridge.",
+  "minimum_chrome_version": "120",
+  "permissions": [
+    "storage",
+    "tabs",
+    "scripting",
+    "activeTab",
+    "webNavigation"
+  ],
+  "host_permissions": [
+    "https://chatgpt.com/*",
+    "https://chat.deepseek.com/*",
+    "http://127.0.0.1/*",
+    "ws://127.0.0.1/*",
+    "wss://127.0.0.1/*"
+  ],
+  "background": {
+    "service_worker": "background/service-worker.js"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://chatgpt.com/*",
+        "https://chat.deepseek.com/*"
+      ],
+      "js": [
+        "providers/base-provider.js",
+        "providers/chatgpt-provider.js",
+        "providers/deepseek-provider.js",
+        "protocol/tool-protocol.js",
+        "agent/agent-loop.js",
+        "agent/queue.js",
+        "agent/loop-protection.js",
+        "agent/safe-mode.js",
+        "utils/session.js",
+        "content/content.js"
+      ],
+      "css": [
+        "ui/agent-panel.css"
+      ],
+      "run_at": "document_idle"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "ui/agent-panel.css"
+      ],
+      "matches": [
+        "https://chatgpt.com/*",
+        "https://chat.deepseek.com/*"
+      ]
+    }
+  ]
+}

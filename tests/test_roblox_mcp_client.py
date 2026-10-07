@@ -39,6 +39,48 @@ class RobloxMCPClientTests(unittest.TestCase):
         self.assertIn("custom_tool", discovered)
         self.assertIn("another_tool", discovered)
 
+    def test_tool_schema_uses_discovered_mcp_definitions(self):
+        client = RobloxMCPClient()
+        client.available_tool_definitions = [
+            {
+                "name": "multi_edit",
+                "description": "Edit scripts",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {"edits": {"type": "array"}},
+                    "required": ["edits"],
+                },
+            }
+        ]
+
+        self.assertEqual(
+            [{
+                "name": "multi_edit",
+                "description": "Edit scripts",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {"edits": {"type": "array"}},
+                    "required": ["edits"],
+                },
+            }],
+            client.get_tool_schema(),
+        )
+
+    def test_stdio_tool_call_reports_mcp_tool_errors(self):
+        client = RobloxMCPClient()
+        client.session_initialized = True
+        client._send_jsonrpc = lambda method, params=None: {
+            "result": {
+                "isError": True,
+                "content": [{"type": "text", "text": "Script could not be edited."}],
+            }
+        }
+
+        result = client._stdio_call_tool("multi_edit", {"edits": []})
+
+        self.assertFalse(result["ok"])
+        self.assertEqual("Script could not be edited.", result["error"])
+
 
 if __name__ == "__main__":
     unittest.main()

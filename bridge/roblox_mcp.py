@@ -31,19 +31,9 @@ class RobloxMCPClient:
         self._last_error = None
         self.connected = False
         self.available_tools = []
+        self.available_tool_definitions = []
         self.session_initialized = False
         self.backend = "http" if self.base_urls else "stdio"
-        self.tool_catalog = {
-            "inspect_tree": {"description": "Inspect the Roblox Instance tree", "arguments": {"path": "string"}},
-            "read_script": {"description": "Read a script or module source", "arguments": {"path": "string"}},
-            "write_script": {"description": "Write a script or module source", "arguments": {"path": "string", "source": "string"}},
-            "create_instance": {"description": "Create a Roblox Instance under a parent", "arguments": {"parent": "string", "className": "string", "name": "string"}},
-            "set_property": {"description": "Set a property value on an instance", "arguments": {"target": "string", "property": "string", "value": "any"}},
-            "find_instance": {"description": "Find a Roblox instance by path or name", "arguments": {"query": "string"}},
-            "run_luau": {"description": "Execute Luau in the Studio environment", "arguments": {"code": "string"}},
-            "playtest_start": {"description": "Start a playtest session", "arguments": {}},
-            "playtest_stop": {"description": "Stop a playtest session", "arguments": {}},
-        }
 
     def _resolve_launcher_path(self):
         env_value = os.environ.get("ROBLOX_MCP_BAT")
@@ -245,12 +235,16 @@ class RobloxMCPClient:
                 normalized = self._normalize_tool_list(tools)
                 if normalized:
                     self.available_tools = normalized
+                    self.available_tool_definitions = [
+                        item for item in tools if isinstance(item, dict) and item.get("name")
+                    ]
                     self.connected = True
                     return normalized
         except (urllib.error.URLError, TimeoutError, ValueError, json.JSONDecodeError):
             pass
 
         self.available_tools = []
+        self.available_tool_definitions = []
         self.connected = False
         return []
 
@@ -272,7 +266,7 @@ class RobloxMCPClient:
         return {"ok": False, "error": f"Tool not available: {tool_name}"}
 
     def _stdio_discover_tools(self):
-        if not self._initialize_stdio_session():
+        if not self.ensure_stdio_connection():
             self.available_tools = []
             self.connected = False
             return []
@@ -283,12 +277,16 @@ class RobloxMCPClient:
             self._last_error = exc
             self.connected = False
             self.available_tools = []
+            self.available_tool_definitions = []
             return []
 
         result = response.get("result", {}) if isinstance(response, dict) else {}
         tools = result.get("tools", []) if isinstance(result, dict) else []
         normalized = self._normalize_tool_list(tools)
         self.available_tools = normalized
+        self.available_tool_definitions = [
+            item for item in tools if isinstance(item, dict) and item.get("name")
+        ]
         self.connected = bool(normalized)
         return normalized
 
@@ -306,6 +304,10 @@ class RobloxMCPClient:
             self.connected = False
             return {"ok": False, "error": str(exc)}
 
+        if isinstance(response, dict) and "error" in response:
+            self.connected = False
+            return {"ok": False, "error": response["error"]}
+
         result = response.get("result", {}) if isinstance(response, dict) else {}
         if isinstance(result, dict):
             raw_content = result.get("content")
@@ -317,13 +319,12 @@ class RobloxMCPClient:
                             text_rows.append(str(item.get("text", "")))
                         elif item.get("text"):
                             text_rows.append(str(item.get("text")))
+            if result.get("isError"):
+                error_text = "\n".join(text_rows) or "Roblox Studio MCP tool call failed."
+                return {"ok": False, "tool": tool_name, "error": error_text, "content": raw_content}
             if text_rows:
                 return {"ok": True, "tool": tool_name, "content": raw_content, "text": "\n".join(text_rows), "raw": result}
             return {"ok": True, "tool": tool_name, "raw": result}
-
-        if isinstance(response, dict) and "error" in response:
-            error_value = response.get("error")
-            return {"ok": False, "error": error_value}
 
         return {"ok": True, "tool": tool_name, "raw": response}
 
@@ -374,14 +375,14 @@ class RobloxMCPClient:
         return self._stdio_call_tool(tool_name, arguments)
 
     def get_tool_schema(self):
-        schema = []
-        for name in self.available_tools or self.tool_catalog.keys():
-            metadata = self.tool_catalog.get(name)
-            if metadata:
-                schema.append({"name": name, "description": metadata["description"], "arguments": metadata["arguments"]})
-            else:
-                schema.append({"name": name, "description": "Discovered Roblox Studio MCP tool", "arguments": {}})
-        return schema
+        return [
+            {
+                "name": tool["name"],
+                "description": tool.get("description", ""),
+                "inputSchema": tool.get("inputSchema", {"type": "object", "properties": {}}),
+            }
+            for tool in self.available_tool_definitions
+        ]
 
     @staticmethod
     def _fallback_call(self, tool_name, arguments=None):

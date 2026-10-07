@@ -97,7 +97,7 @@ roblox-ai-agent/
 Quick start on Windows:
 
 ```bat
-cd "c:\thomas\persoonlijk\roblox extension\ai-roblox-studio-extension"
+cd "c:\thomas\persoonlijk\roblox_extension\ai-roblox-studio-extension"
 Scripts\start_bridge.bat
 ```
 
@@ -124,9 +124,9 @@ Scripts\start_mock_mcp_server.bat
 
 ## Roblox Studio MCP
 
-At this stage, the bridge includes a discovery layer and local tool registry stub. In Roblox Studio, enable the MCP integration you are using and make sure the local bridge can communicate with it.
+The bridge discovers the tools exposed by the active Roblox Studio MCP server and passes their descriptions and input schemas to the AI agent. The tools available for reading or editing your project depend on the MCP server and Roblox Studio integration you have enabled.
 
-The bridge will discover available tool names dynamically and map them through a compatibility layer before sending requests to the AI agent loop.
+The agent calls those tools through the local bridge and sends each tool result back to the chat before continuing. It does not advertise placeholder tools that the Studio MCP server does not provide.
 
 ## How to start an agent session
 
@@ -163,7 +163,7 @@ This covers protocol parsing and queue safety checks and is the current verifica
 
 ## Known limitations
 
-This is a reliable foundation, not a complete production-grade Roblox Studio automation package. The main remaining work is to connect the bridge to the actual Roblox Studio MCP interface and upgrade the provider adapters to handle more dynamic DOM and rate-limit behavior in the live websites.
+This is not a production-grade Roblox Studio automation package. Tool execution depends on the MCP tools exposed by the installed Studio integration, and the browser provider adapters may need updates if the live chat websites change their page layouts.
 
 ## Troubleshooting
 

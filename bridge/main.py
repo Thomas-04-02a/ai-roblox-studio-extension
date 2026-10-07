@@ -47,6 +47,7 @@ class BridgeRequestHandler(BaseHTTPRequestHandler):
                 "mcp": status_value,
                 "ws_port": WS_PORT,
                 "available_tools": tools,
+                "tool_schema": MCP_CLIENT.get_tool_schema(),
                 "backend": status_snapshot.get("backend"),
                 "studio_connected": status_snapshot.get("studio_connected"),
                 "mcp_bat_found": status_snapshot.get("mcp_bat_found"),
@@ -68,7 +69,16 @@ class BridgeRequestHandler(BaseHTTPRequestHandler):
             if message.get("type") == "session.create":
                 provider = message.get("provider", "unknown")
                 record = SessionManager.create_session(provider)
-                self._send_json(200, {"ok": True, "session_id": record.session_id, "token": record.token, "provider": provider})
+                tools = MCP_CLIENT.discover_tools()
+                self._send_json(200, {
+                    "ok": True,
+                    "session_id": record.session_id,
+                    "token": record.token,
+                    "provider": provider,
+                    "available_tools": tools,
+                    "tool_schema": MCP_CLIENT.get_tool_schema(),
+                    "roblox_connected": MCP_CLIENT.connected,
+                })
                 return
 
             session_id = self.headers.get("X-Session-Id")
